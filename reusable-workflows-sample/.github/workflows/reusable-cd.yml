@@ -1,0 +1,43 @@
+name: Continuous Deployment (CD)
+
+on:
+  workflow_call:
+    inputs:
+      heroku_app_name:
+        required: true
+        type: string
+      heroku_email:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+    secrets:
+      heroku_api_key:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Heroku
+        run: echo "Deploying to Heroku..."
+
+      - uses: actions/checkout@v3
+      - uses: akhileshns/heroku-deploy@v3.12.12
+        with:
+          heroku_api_key: ${{ secrets.heroku_api_key }}
+          heroku_app_name: ${{ inputs.heroku_app_name }}
+          heroku_email: ${{ inputs.heroku_email }}
+          stack: heroku-18 # Not needed if you are using latest stack
+
+      - name: Install Heroku CLI, if necessary
+        run: |
+          if [[ $(command -v heroku) == "" ]]; then
+            curl https://cli-assets.heroku.com/install.sh | sh
+          else
+            echo "Heroku is already installed. No operation was performed."
+          fi
+
+      - name: Migrate DB
+        run: heroku run rake db:migrate -a ${{ inputs.heroku_app_name }}

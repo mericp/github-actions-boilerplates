@@ -1,0 +1,11 @@
+name: Build and test development branch
+
+on:
+  push:
+    branches: ['*', '!main', '!staging']
+  pull_request:
+    branches: ['*', '!main', '!staging']
+
+jobs:
+  build:
+    uses: ./.github/workflows/reusable-ci.yml

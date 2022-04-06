@@ -1,0 +1,47 @@
+name: Continuous Integration (CI)
+
+on:
+  workflow_call:
+    secrets:
+      postgres_db:
+        required: true
+      postgres_user:
+        required: true
+      postgres_password:
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:alpine3.15
+        ports:
+          - '5432:5432' # Map local port with docker container port
+        env:
+          POSTGRES_DB: ${{ secrets.postgres_db }}
+          POSTGRES_USER: ${{ secrets.postgres_user }}
+          POSTGRES_PASSWORD: ${{ secrets.postgres_password }}
+    env:
+      DATABASE_URL: "postgres://${{ secrets.postgres_user }}:${{ secrets.postgres_password }}@localhost:5432/${{ secrets.postgres_db }}"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Ruby and gems
+        uses: ruby/setup-ruby@v2
+        with:
+          bundler-cache: true # Cache dependencies using Gemfile.lock.
+          # ruby-version: 3.1.1 # Not needed with a .ruby-version file
+
+      - name: Precompile assets # This is usually needed in Rails projects
+        run: bundle exec rake assets:precompile
+
+      - name: Setup database
+        run: |
+          bundle exec rake db:create
+          bundle exec rake db:migrate
+
+      - name: Run tests
+        run: bundle exec rspec --format progress

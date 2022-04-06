@@ -1,0 +1,22 @@
+name: Build, test and deploy staging branch
+
+on:
+  push:
+    branches: ['staging']
+
+jobs:
+  build:
+    uses: ./.github/workflows/reusable-ci.yml
+    secrets: # Configure secrets from Settings > Secrets > Actions
+      postgres_db: ${{ secrets.POSTGRES_TEST_DB }}
+      postgres_user: ${{ secrets.POSTGRES_TEST_DB_USER }}
+      postgres_password: ${{ secrets.POSTGRES_TEST_DB_PASSWORD }}
+  deploy:
+    needs: build
+    uses: ./.github/workflows/reusable-cd.yml
+    with:
+      heroku_app_name: 'my_heroku_app_staging'
+      heroku_email: 'orgemail@mailer.es'
+      environment: 'staging'
+    secrets:
+      heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
