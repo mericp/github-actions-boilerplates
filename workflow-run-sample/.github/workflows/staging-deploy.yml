@@ -1,0 +1,37 @@
+name: Deployment to production (CD)
+
+on:
+  workflow_run: # Will only be triggered once the workflow is in a default branch, such as main or staging
+    workflows:
+      - Continuous Integration (CI)
+    types:
+      - completed # Only when the build is completed
+    branches:
+      - staging # Only triggered for staging branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }} # Only if the build was successful
+    steps:
+      - name: Deploy to Heroku
+        run: echo "Deploying to Heroku application..."
+
+      - uses: actions/checkout@v3
+      - uses: akhileshns/heroku-deploy@v3.12.12
+        with:
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY_PRODUCTION }}
+          heroku_email: ${{ secrets.HEROKU_EMAIL_PRODUCTION }}
+          heroku_app_name: ${{ secrets.HEROKU_APP_NAME_STAGING }}
+          stack: heroku-18 # Not needed if you are using latest stack
+
+      - name: Install Heroku CLI, if necessary
+        run: |
+          if [[ $(command -v heroku) == "" ]]; then
+            curl https://cli-assets.heroku.com/install.sh | sh
+          else
+            echo "Heroku is already installed. No operation was performed."
+          fi
+
+      - name: Migrate DB
+        run: heroku run rake db:migrate -a ${{ secrets.HEROKU_APP_NAME_STAGING }}
