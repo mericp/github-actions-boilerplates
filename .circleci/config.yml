@@ -1,0 +1,15 @@
+# This file will prevent CircleCI from running a long build.
+# Might be useful while working on the migration to Github Actions.
+
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: cimg/ruby:3.1.1
+    working_directory: ~/repo
+
+    steps:
+      - run:
+        name: 'Skipping CircleCI check'
+        command: echo "Skipping CircleCI check"
